@@ -1,0 +1,4 @@
+R5T.Gepidia.Remote.Construction - A construction console-app for the library R5T.Gepidia.Remote.
+
+Goals
+

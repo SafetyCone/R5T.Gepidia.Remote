@@ -1,0 +1,4 @@
+R5T.Gepidia.Remote - A codenamed remote file-system implementation of the Gepidia IFileSystemOperator interface using SSH.NET.
+
+Goals
+
