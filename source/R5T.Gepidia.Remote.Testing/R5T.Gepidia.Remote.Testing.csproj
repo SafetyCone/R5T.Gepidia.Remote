@@ -16,4 +16,8 @@
     <ProjectReference Include="..\R5T.Gepidia.Remote\R5T.Gepidia.Remote.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Code\Tests\" />
+  </ItemGroup>
+
 </Project>
