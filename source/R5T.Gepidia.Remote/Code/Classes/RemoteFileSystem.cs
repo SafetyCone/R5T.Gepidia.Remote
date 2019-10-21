@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 
 using R5T.Lombardy;
+using R5T.Magyar.IO;
 using R5T.Pictia;
+using R5T.Pictia.Extensions;
+
+using R5T.Gepidia.Remote.Extensions;
 
 
 namespace R5T.Gepidia.Remote
@@ -62,6 +66,19 @@ namespace R5T.Gepidia.Remote
 
             var output = attributes.IsDirectory;
             return output;
+        }
+
+        public static FileSystemEntryType GetFileSystemEntryType(SftpClientWrapper sftpClientWrapper, string path)
+        {
+            var isDirectory = RemoteFileSystem.IsDirectory(sftpClientWrapper, path);
+            if(isDirectory)
+            {
+                return FileSystemEntryType.Directory;
+            }
+            else
+            {
+                return FileSystemEntryType.File;
+            }
         }
 
         public static void CreateDirectory(SftpClientWrapper sftpClientWrapper, string directoryPath, IStringlyTypedPathOperator stringlyTypedPathOperator)
@@ -278,7 +295,7 @@ namespace R5T.Gepidia.Remote
             }
         }
 
-        public static IEnumerable<string> EnumerateFileSystemEntries(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = false)
+        public static IEnumerable<string> EnumerateFileSystemEntryPaths(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = false)
         {
             var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
             foreach (var sftpFile in sftpFiles)
@@ -287,11 +304,79 @@ namespace R5T.Gepidia.Remote
 
                 if(recursive && sftpFile.IsDirectory)
                 {
+                    var subDirectoryFileSystemEntries = RemoteFileSystem.EnumerateFileSystemEntryPaths(sftpClientWrapper, sftpFile.FullName, true);
+                    foreach (var subDirectoryFileSystemEntry in subDirectoryFileSystemEntries)
+                    {
+                        yield return subDirectoryFileSystemEntry;
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntries(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = false)
+        {
+            var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
+            foreach (var sftpFile in sftpFiles)
+            {
+                var fileSystemEntryType = sftpFile.GetFileSystemEntryType();
+                var fileSystemEntryPath = sftpFile.FullName;
+
+                var fileSystemEntry = FileSystemEntry.New(fileSystemEntryPath, fileSystemEntryType);
+                yield return fileSystemEntry;
+
+                if (recursive && sftpFile.IsDirectory)
+                {
                     var subDirectoryFileSystemEntries = RemoteFileSystem.EnumerateFileSystemEntries(sftpClientWrapper, sftpFile.FullName, true);
                     foreach (var subDirectoryFileSystemEntry in subDirectoryFileSystemEntries)
                     {
                         yield return subDirectoryFileSystemEntry;
                     }
+                }
+            }
+        }
+
+        public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntriesFast(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = false)
+        {
+            if(!recursive)
+            {
+                return RemoteFileSystem.EnumerateFileSystemEntries(sftpClientWrapper, directoryPath, recursive); // If only this directory, then only do this directory.
+            }
+
+            using (var sshClientWrapper = sftpClientWrapper.GetSshClientWrapper())
+            {
+                var commandText = $"find \"{directoryPath}\" -print -ls"; // Produces two lines for each file-system entry, the path of the entry, and information about the entry.
+                using (var command = sshClientWrapper.SshClient.CreateCommand(commandText))
+                {
+                    var commandOutput = command.Execute();
+
+                    return RemoteFileSystem.ParseListDirectoryContentsRecursive(commandOutput);
+                }
+            }
+        }
+
+        // Example:
+        // /home/user/Directory
+        // 266158    0 drwxrwxr-x   2 user user      224 Oct 14 23:18 /home/user/Directory
+        // /home/user/Directory/File.txt
+        // 266158    4 -rw-rw-r--   1 user user      752 Oct 14 23:18 /home/user/Directory/File.txt
+        private static IEnumerable<FileSystemEntry> ParseListDirectoryContentsRecursive(string commandOutput)
+        {
+            var separators = new char[] { ' ' };
+            using (var stringReader = new StringReader(commandOutput))
+            {
+                while (stringReader.ReadLineIsEnd(out var pathLine))
+                {
+                    var infoLine = stringReader.ReadLine();
+
+                    var infoTokens = infoLine.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+
+                    var permissionsToken = infoTokens[2];
+
+                    var isDirectory = permissionsToken[0] == 'd';
+                    var fileSystemEntryType = isDirectory ? FileSystemEntryType.Directory : FileSystemEntryType.File;
+
+                    var fileSystemEntry = FileSystemEntry.New(pathLine, fileSystemEntryType);
+                    yield return fileSystemEntry;
                 }
             }
         }
