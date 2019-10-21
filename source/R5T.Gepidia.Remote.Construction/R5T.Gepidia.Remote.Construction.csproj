@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\R5T.Burgundy\source\R5T.Burgundy\R5T.Burgundy.csproj" />
     <ProjectReference Include="..\R5T.Gepidia.Remote\R5T.Gepidia.Remote.csproj" />
   </ItemGroup>
 
