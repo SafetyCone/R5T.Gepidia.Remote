@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
+using R5T.Lombardy;
 using R5T.Pictia;
 
 
@@ -10,11 +11,13 @@ namespace R5T.Gepidia.Remote
     public class RemoteFileSystemOperator : IFileSystemOperator
     {
         private SftpClientWrapper SftpClientWrapper { get; }
+        public IStringlyTypedPathOperator StringlyTypedPathOperator { get; }
 
 
-        public RemoteFileSystemOperator(SftpClientWrapper sftpClientWrapper)
+        public RemoteFileSystemOperator(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator)
         {
             this.SftpClientWrapper = sftpClientWrapper;
+            this.StringlyTypedPathOperator = stringlyTypedPathOperator;
         }
 
         public void ChangePermissions(string path, short mode)
@@ -44,7 +47,7 @@ namespace R5T.Gepidia.Remote
 
         public void CreateDirectory(string directoryPath)
         {
-            RemoteFileSystem.CreateDirectory(this.SftpClientWrapper, directoryPath);
+            RemoteFileSystem.CreateDirectory(this.SftpClientWrapper, directoryPath, this.StringlyTypedPathOperator);
         }
 
         public Stream CreateFile(string filePath, bool overwrite = true)
