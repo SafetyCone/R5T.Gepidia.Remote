@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
+using R5T.Lombardy;
 using R5T.Pictia;
 
 
@@ -63,14 +64,14 @@ namespace R5T.Gepidia.Remote
             return output;
         }
 
-        public static void CreateDirectory(SftpClientWrapper sftpClientWrapper, string directoryPath)
+        public static void CreateDirectory(SftpClientWrapper sftpClientWrapper, string directoryPath, IStringlyTypedPathOperator stringlyTypedPathOperator)
         {
-            sftpClientWrapper.CreateDirectory(directoryPath); // Idempotent. No exception thrown.
+            sftpClientWrapper.CreateDirectory(directoryPath, stringlyTypedPathOperator); // Idempotent. No exception thrown.
         }
 
-        public static void CreateDirectoryOnlyIfNotExists(SftpClientWrapper sftpClientWrapper, string directoryPath)
+        public static void CreateDirectoryOnlyIfNotExists(SftpClientWrapper sftpClientWrapper, string directoryPath, IStringlyTypedPathOperator stringlyTypedPathOperator)
         {
-            RemoteFileSystem.CreateDirectory(sftpClientWrapper, directoryPath);
+            RemoteFileSystem.CreateDirectory(sftpClientWrapper, directoryPath, stringlyTypedPathOperator);
         }
 
         public static void DeleteDirectory(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = true)
