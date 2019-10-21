@@ -1,5 +1,6 @@
 ﻿using System;
 
+using R5T.Lombardy;
 using R5T.Pictia;
 
 
@@ -12,9 +13,9 @@ namespace R5T.Gepidia.Remote
         /// Idempotent, can be called multiple times (does not throw an exception if the directory already exists).
         /// Creates all required intermediate directories for a nested directory path.
         /// </summary>
-        public static void CreateDirectory(this SftpClientWrapper clientWrapper, string directoryPath)
+        public static void CreateDirectory(this SftpClientWrapper clientWrapper, string directoryPath, IStringlyTypedPathOperator stringlyTypedPathOperator)
         {
-            clientWrapper.SftpClient.CreateDirectoryOkIfIntermediatesAndExists(directoryPath);
+            clientWrapper.SftpClient.CreateDirectoryOkIfIntermediatesAndExists(directoryPath, stringlyTypedPathOperator);
         }
 
         /// <summary>
