@@ -33,14 +33,14 @@ namespace R5T.Gepidia.Remote
         /// The <see cref="Renci.SshNet.SftpClient.CreateDirectory(string)"/> method will not make intermediate directories for nested directories. For example, if A exists, but B does not, a call to create C such that /A/B/C will fail with exception:
         ///     Renci.SshNet.Common.SftpPathNotFoundException: 'No such file'
         /// </remarks>
-        public static void CreateDirectoryOkIfIntermediatesAndExists(this SftpClient sftpClient, string directoryPath)
+        public static void CreateDirectoryOkIfIntermediatesAndExists(this SftpClient sftpClient, string directoryPath, IStringlyTypedPathOperator stringlyTypedPathOperator)
         {
             // The SftpClient.CreateDirectory() call will not make intermediate directories as required for a path.
             // This work-around walks up the directory tree until a parent directory exists, and makes intermediate directories as required.
-            var parentDirectoryPath = StringlyTypedPath.GetParentDirectoryPathForDirectoryPath(directoryPath);
+            var parentDirectoryPath = stringlyTypedPathOperator.GetParentDirectoryPathForDirectoryPath(directoryPath);
             if (!sftpClient.Exists(parentDirectoryPath))
             {
-                sftpClient.CreateDirectoryOkIfIntermediatesAndExists(parentDirectoryPath);
+                sftpClient.CreateDirectoryOkIfIntermediatesAndExists(parentDirectoryPath, stringlyTypedPathOperator);
             }
 
             sftpClient.CreateDirectoryOkIfExists(directoryPath);
