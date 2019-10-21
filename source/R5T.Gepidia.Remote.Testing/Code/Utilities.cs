@@ -1,6 +1,7 @@
 ﻿using System;
 
 using R5T.Lombardy;
+using R5T.Magyar;
 
 
 namespace R5T.Gepidia.Remote.Testing
