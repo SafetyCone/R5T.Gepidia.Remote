@@ -272,18 +272,27 @@ namespace R5T.Gepidia.Remote
             }
         }
 
-        public static IEnumerable<string> EnumerateDirectories(SftpClientWrapper sftpClientWrapper, string directoryPath)
+        /// <summary>
+        /// Returns directory-indicated directory paths.
+        /// Non-recursive.
+        /// </summary>
+        public static IEnumerable<string> EnumerateDirectories(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator, string directoryPath)
         {
             var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
             foreach (var sftpFile in sftpFiles)
             {
                 if(sftpFile.IsDirectory)
                 {
-                    yield return sftpFile.FullName;
+                    var entryDirectoryPath = stringlyTypedPathOperator.EnsureDirectoryPathIsDirectoryIndicated(sftpFile.FullName); // SSH.NET does NOT return directory-indicated directory paths.
+                    yield return entryDirectoryPath;
                 }
             }
         }
 
+        /// <summary>
+        /// Returns file paths.
+        /// Non-recursive.
+        /// </summary>
         public static IEnumerable<string> EnumerateFiles(SftpClientWrapper sftpClientWrapper, string directoryPath)
         {
             var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
@@ -291,36 +300,56 @@ namespace R5T.Gepidia.Remote
             {
                 if (!sftpFile.IsDirectory)
                 {
-                    yield return sftpFile.FullName;
+                    yield return sftpFile.FullName; // SSH.NET DOES return file-indicated file paths.
                 }
             }
         }
 
-        public static IEnumerable<string> EnumerateFileSystemEntryPaths(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = false)
+        /// <summary>
+        /// Produces paths where directory paths are directory-indicated, and file paths are file-indicated.
+        /// Returns all file-entries in sorted order.
+        /// </summary>
+        /// <remarks>
+        /// For a remote directory containing N directories (including the base directory), this method requires N remote calls to list directories.
+        /// TODO: rework to use SSH-client command output parsing allowing just one call.
+        /// </remarks>
+        public static IEnumerable<string> EnumerateFileSystemEntryPaths(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator, string directoryPath, bool recursive = false)
         {
             var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
             foreach (var sftpFile in sftpFiles)
             {
-                yield return sftpFile.FullName;
+                var entryPath = sftpFile.GetPath(stringlyTypedPathOperator);
+                yield return entryPath;
 
-                if(recursive && sftpFile.IsDirectory)
+                if (sftpFile.IsDirectory)
                 {
-                    var subDirectoryFileSystemEntries = RemoteFileSystem.EnumerateFileSystemEntryPaths(sftpClientWrapper, sftpFile.FullName, true);
-                    foreach (var subDirectoryFileSystemEntry in subDirectoryFileSystemEntries)
+                    if(recursive)
                     {
-                        yield return subDirectoryFileSystemEntry;
+                        var subDirectoryFileSystemEntries = RemoteFileSystem.EnumerateFileSystemEntryPaths(sftpClientWrapper, stringlyTypedPathOperator, sftpFile.FullName, true); // Use SftpFile.FullName.
+                        foreach (var subDirectoryFileSystemEntry in subDirectoryFileSystemEntries)
+                        {
+                            yield return subDirectoryFileSystemEntry;
+                        }
                     }
                 }
             }
         }
 
-        public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntries(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = false)
+        /// <summary>
+        /// Produces paths where directory paths are directory-indicated, and file paths are file-indicated.
+        /// Returns all file-entries in sorted order.
+        /// </summary>
+        /// <remarks>
+        /// For a remote directory containing N directories (including the base directory), this method requires N remote calls to list directories.
+        /// For a faster implementation, use <see cref="RemoteFileSystem.EnumerateFileSystemEntriesFast(SftpClientWrapper, IStringlyTypedPathOperator, string, bool)"/>.
+        /// </remarks>
+        public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntriesSimple(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator, string directoryPath, bool recursive = false)
         {
             var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
             foreach (var sftpFile in sftpFiles)
             {
                 var fileSystemEntryType = sftpFile.GetFileSystemEntryType();
-                var fileSystemEntryPath = sftpFile.FullName;
+                var fileSystemEntryPath = sftpFile.GetPath(stringlyTypedPathOperator);
                 var lastModifedUTC = sftpFile.LastWriteTimeUtc;
 
                 var fileSystemEntry = FileSystemEntry.New(fileSystemEntryPath, fileSystemEntryType, lastModifedUTC);
@@ -328,7 +357,7 @@ namespace R5T.Gepidia.Remote
 
                 if (recursive && sftpFile.IsDirectory)
                 {
-                    var subDirectoryFileSystemEntries = RemoteFileSystem.EnumerateFileSystemEntries(sftpClientWrapper, sftpFile.FullName, true);
+                    var subDirectoryFileSystemEntries = RemoteFileSystem.EnumerateFileSystemEntries(sftpClientWrapper, stringlyTypedPathOperator, sftpFile.FullName, true); // Use SftpFile.FullName.
                     foreach (var subDirectoryFileSystemEntry in subDirectoryFileSystemEntries)
                     {
                         yield return subDirectoryFileSystemEntry;
@@ -337,11 +366,17 @@ namespace R5T.Gepidia.Remote
             }
         }
 
-        public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntriesFast(SftpClientWrapper sftpClientWrapper, string directoryPath, bool recursive = false)
+        /// <summary>
+        /// Produces paths where directory paths are directory-indicated, and file paths are file-indicated.
+        /// Returns all file-entries in sorted order.
+        /// </summary>
+        public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntriesFast(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator, string directoryPath, bool recursive = false)
         {
             if(!recursive)
             {
-                return RemoteFileSystem.EnumerateFileSystemEntries(sftpClientWrapper, directoryPath, recursive); // If only this directory, then only do this directory.
+                // If not recusive, use the simple implementation that 
+                var output = RemoteFileSystem.EnumerateFileSystemEntries(sftpClientWrapper, stringlyTypedPathOperator, directoryPath, recursive); // If only this directory, then only do this directory.
+                return output;
             }
 
             using (var sshClientWrapper = sftpClientWrapper.GetSshClientWrapper())
@@ -351,18 +386,24 @@ namespace R5T.Gepidia.Remote
                 {
                     var commandOutput = command.Execute();
 
-                    return RemoteFileSystem.ParseListDirectoryContentsRecursive(commandOutput);
+                    var output = RemoteFileSystem.ParseListDirectoryContentsRecursive(stringlyTypedPathOperator, commandOutput);
+                    return output;
                 }
             }
         }
 
-        // Example:
-        // /home/user/Directory
-        // 266158    0 drwxrwxr-x   2 user user      224 Oct 14 23:18 /home/user/Directory
-        // /home/user/Directory/File.txt
-        // 266158    4 -rw-rw-r--   1 user user      752 Oct 14 23:18 /home/user/Directory/File.txt
-        private static IEnumerable<FileSystemEntry> ParseListDirectoryContentsRecursive(string commandOutput)
+        /// <summary>
+        /// Produces paths where directory paths are directory-indicated, and file paths are file-indicated.
+        /// Returns all file-entries in sorted order.
+        /// </summary>
+        private static IEnumerable<FileSystemEntry> ParseListDirectoryContentsRecursive(IStringlyTypedPathOperator stringlyTypedPathOperator, string commandOutput)
         {
+            // Example command output:
+            // /home/user/Directory
+            // 266158    0 drwxrwxr-x   2 user user      224 Oct 14 23:18 /home/user/Directory
+            // /home/user/Directory/File.txt
+            // 266158    4 -rw-rw-r--   1 user user      752 Oct 14 23:18 /home/user/Directory/File.txt
+
             var separators = new char[] { ' ' };
             using (var stringReader = new StringReader(commandOutput))
             {
@@ -388,10 +429,23 @@ namespace R5T.Gepidia.Remote
 
                     var lastModifiedDateUTC = DateTime.Parse($"{monthToken} {dayToken} {timeToken}");
 
-                    var fileSystemEntry = FileSystemEntry.New(pathLine, fileSystemEntryType, lastModifiedDateUTC);
+                    var entryPath = isDirectory ? stringlyTypedPathOperator.EnsureDirectoryPathIsDirectoryIndicated(pathLine) : pathLine; // The 'find' command does NOT produce directory-indicated directory paths. But file paths are file-indicated.
+
+                    var fileSystemEntry = FileSystemEntry.New(entryPath, fileSystemEntryType, lastModifiedDateUTC);
                     yield return fileSystemEntry;
                 }
             }
+        }
+
+        /// <summary>
+        /// Produces paths where directory paths are directory-indicated, and file paths are file-indicated.
+        /// Returns all file-entries in sorted order.
+        /// Uses the fast implementation <see cref="RemoteFileSystem.EnumerateFileSystemEntriesFast(SftpClientWrapper, IStringlyTypedPathOperator, string, bool)"/>.
+        /// </summary>
+        public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntries(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator, string directoryPath, bool recursive = false)
+        {
+            var output = RemoteFileSystem.EnumerateFileSystemEntriesFast(sftpClientWrapper, stringlyTypedPathOperator, directoryPath, recursive);
+            return output;
         }
 
 

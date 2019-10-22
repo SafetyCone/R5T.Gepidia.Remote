@@ -68,7 +68,7 @@ namespace R5T.Gepidia.Remote
 
         public IEnumerable<string> EnumerateDirectories(string directoryPath)
         {
-            var output = RemoteFileSystem.EnumerateDirectories(this.SftpClientWrapper, directoryPath);
+            var output = RemoteFileSystem.EnumerateDirectories(this.SftpClientWrapper, this.StringlyTypedPathOperator, directoryPath);
             return output;
         }
 
@@ -80,13 +80,13 @@ namespace R5T.Gepidia.Remote
 
         public IEnumerable<string> EnumerateFileSystemEntryPaths(string directoryPath, bool recursive = false)
         {
-            var output = RemoteFileSystem.EnumerateFileSystemEntryPaths(this.SftpClientWrapper, directoryPath, recursive);
+            var output = RemoteFileSystem.EnumerateFileSystemEntryPaths(this.SftpClientWrapper, this.StringlyTypedPathOperator, directoryPath, recursive);
             return output;
         }
 
         public IEnumerable<FileSystemEntry> EnumerateFileSystemEntries(string directoryPath, bool recursive = false)
         {
-            var output = RemoteFileSystem.EnumerateFileSystemEntriesFast(this.SftpClientWrapper, directoryPath, recursive);
+            var output = RemoteFileSystem.EnumerateFileSystemEntriesFast(this.SftpClientWrapper, this.StringlyTypedPathOperator, directoryPath, recursive);
             return output;
         }
 
