@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 
 using R5T.Lombardy;
+using R5T.Magyar.Extensions;
 using R5T.Magyar.IO;
 using R5T.Pictia;
 using R5T.Pictia.Extensions;
@@ -320,8 +321,9 @@ namespace R5T.Gepidia.Remote
             {
                 var fileSystemEntryType = sftpFile.GetFileSystemEntryType();
                 var fileSystemEntryPath = sftpFile.FullName;
+                var lastModifedUTC = sftpFile.LastWriteTimeUtc;
 
-                var fileSystemEntry = FileSystemEntry.New(fileSystemEntryPath, fileSystemEntryType);
+                var fileSystemEntry = FileSystemEntry.New(fileSystemEntryPath, fileSystemEntryType, lastModifedUTC);
                 yield return fileSystemEntry;
 
                 if (recursive && sftpFile.IsDirectory)
@@ -375,7 +377,18 @@ namespace R5T.Gepidia.Remote
                     var isDirectory = permissionsToken[0] == 'd';
                     var fileSystemEntryType = isDirectory ? FileSystemEntryType.Directory : FileSystemEntryType.File;
 
-                    var fileSystemEntry = FileSystemEntry.New(pathLine, fileSystemEntryType);
+                    // Get the last modified date.
+                    var infoLineWithoutPath = infoLine.ExceptLast(pathLine.Length + 1); // Remove the trailing space.
+
+                    var infoLineWithoutPathTokens = infoLineWithoutPath.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+
+                    var monthToken = infoLineWithoutPathTokens.NthToLast(3);
+                    var dayToken = infoLineWithoutPathTokens.NthToLast(2);
+                    var timeToken = infoLineWithoutPathTokens.NthToLast(1);
+
+                    var lastModifiedDateUTC = DateTime.Parse($"{monthToken} {dayToken} {timeToken}");
+
+                    var fileSystemEntry = FileSystemEntry.New(pathLine, fileSystemEntryType, lastModifiedDateUTC);
                     yield return fileSystemEntry;
                 }
             }
