@@ -308,6 +308,7 @@ namespace R5T.Gepidia.Remote
         /// <summary>
         /// Produces paths where directory paths are directory-indicated, and file paths are file-indicated.
         /// Returns all file-entries in sorted order.
+        /// Does not return hidden entries.
         /// </summary>
         /// <remarks>
         /// For a remote directory containing N directories (including the base directory), this method requires N remote calls to list directories.
@@ -315,7 +316,7 @@ namespace R5T.Gepidia.Remote
         /// </remarks>
         public static IEnumerable<string> EnumerateFileSystemEntryPaths(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator, string directoryPath, bool recursive = false)
         {
-            var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
+            var sftpFiles = sftpClientWrapper.SftpClient.ListDirectoryEntriesOnly(directoryPath);
             foreach (var sftpFile in sftpFiles)
             {
                 var entryPath = sftpFile.GetPath(stringlyTypedPathOperator);
@@ -345,7 +346,7 @@ namespace R5T.Gepidia.Remote
         /// </remarks>
         public static IEnumerable<FileSystemEntry> EnumerateFileSystemEntriesSimple(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator, string directoryPath, bool recursive = false)
         {
-            var sftpFiles = sftpClientWrapper.SftpClient.ListDirectory(directoryPath);
+            var sftpFiles = sftpClientWrapper.SftpClient.ListDirectoryEntriesOnly(directoryPath);
             foreach (var sftpFile in sftpFiles)
             {
                 var fileSystemEntryType = sftpFile.GetFileSystemEntryType();
@@ -407,7 +408,7 @@ namespace R5T.Gepidia.Remote
             var separators = new char[] { ' ' };
             using (var stringReader = new StringReader(commandOutput))
             {
-                while (stringReader.ReadLineIsEnd(out var pathLine))
+                while (!stringReader.ReadLineIsEnd(out var pathLine))
                 {
                     var infoLine = stringReader.ReadLine();
 
