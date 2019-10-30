@@ -405,12 +405,20 @@ namespace R5T.Gepidia.Remote
             // /home/user/Directory/File.txt
             // 266158    4 -rw-rw-r--   1 user user      752 Oct 14 23:18 /home/user/Directory/File.txt
 
+            var isFirstLine = true; // Used to ignore the first line.
+
             var separators = new char[] { ' ' };
             using (var stringReader = new StringReader(commandOutput))
             {
                 while (!stringReader.ReadLineIsEnd(out var pathLine))
                 {
                     var infoLine = stringReader.ReadLine();
+
+                    if(isFirstLine)
+                    {
+                        isFirstLine = false;
+                        continue;
+                    }
 
                     var infoTokens = infoLine.Split(separators, StringSplitOptions.RemoveEmptyEntries);
 
@@ -428,7 +436,7 @@ namespace R5T.Gepidia.Remote
                     var dayToken = infoLineWithoutPathTokens.NthToLast(2);
                     var timeToken = infoLineWithoutPathTokens.NthToLast(1);
 
-                    var lastModifiedDateUTC = DateTime.Parse($"{monthToken} {dayToken} {timeToken}");
+                    var lastModifiedDateUTC = DateTime.Parse($"{timeToken} {monthToken}/{dayToken}/{DateTime.UtcNow.Year}");
 
                     var entryPath = isDirectory ? stringlyTypedPathOperator.EnsureDirectoryPathIsDirectoryIndicated(pathLine) : pathLine; // The 'find' command does NOT produce directory-indicated directory paths. But file paths are file-indicated.
 
