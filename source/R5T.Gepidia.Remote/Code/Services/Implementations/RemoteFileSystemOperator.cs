@@ -8,7 +8,7 @@ using R5T.Pictia;
 
 namespace R5T.Gepidia.Remote
 {
-    public class RemoteFileSystemOperator : IFileSystemOperator
+    public class RemoteFileSystemOperator : IRemoteFileSystemOperator
     {
         private SftpClientWrapper SftpClientWrapper { get; }
         public IStringlyTypedPathOperator StringlyTypedPathOperator { get; }
