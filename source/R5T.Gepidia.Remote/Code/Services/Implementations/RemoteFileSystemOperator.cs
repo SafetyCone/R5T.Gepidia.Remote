@@ -10,13 +10,16 @@ namespace R5T.Gepidia.Remote
 {
     public class RemoteFileSystemOperator : IRemoteFileSystemOperator
     {
-        private SftpClientWrapper SftpClientWrapper { get; }
+        private ISftpClientWrapperProvider SftpClientWrapperProvider { get; }
         public IStringlyTypedPathOperator StringlyTypedPathOperator { get; }
 
+        private SftpClientWrapper SftpClientWrapper { get; }
 
-        public RemoteFileSystemOperator(SftpClientWrapper sftpClientWrapper, IStringlyTypedPathOperator stringlyTypedPathOperator)
+
+        public RemoteFileSystemOperator(ISftpClientWrapperProvider sftpClientWrapperProvider, IStringlyTypedPathOperator stringlyTypedPathOperator)
         {
-            this.SftpClientWrapper = sftpClientWrapper;
+            this.SftpClientWrapperProvider = sftpClientWrapperProvider;
+            this.SftpClientWrapper = this.SftpClientWrapperProvider.GetSftpClientWrapper();
             this.StringlyTypedPathOperator = stringlyTypedPathOperator;
         }
 
