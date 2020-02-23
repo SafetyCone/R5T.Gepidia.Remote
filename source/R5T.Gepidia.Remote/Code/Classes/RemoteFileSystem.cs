@@ -410,7 +410,7 @@ namespace R5T.Gepidia.Remote
             var separators = new char[] { ' ' };
             using (var stringReader = new StringReader(commandOutput))
             {
-                while (!stringReader.ReadLineIsEnd(out var pathLine))
+                while (stringReader.ReadLine(out var pathLine))
                 {
                     var infoLine = stringReader.ReadLine();
 
