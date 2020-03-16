@@ -413,6 +413,7 @@ namespace R5T.Gepidia.Remote
                 while (stringReader.ReadLine(out var pathLine))
                 {
                     var infoLine = stringReader.ReadLine();
+                    infoLine = infoLine.Replace("\\ ", " "); // Fix spaces in file or directory name issue.
 
                     if(isFirstLine)
                     {
