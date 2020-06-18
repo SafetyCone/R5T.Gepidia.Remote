@@ -15,8 +15,8 @@ namespace R5T.Gepidia.Remote
         /// Adds the <see cref="RemoteFileSystemOperator"/> implementation of <see cref="IRemoteFileSystemOperator"/> as a <see cref="ServiceLifetime.Singleton"/>.
         /// </summary>
         public static IServiceCollection AddRemoteFileSystemOperator(this IServiceCollection services,
-            ServiceAction<ISftpClientWrapperProvider> addSftpClientWrapperProvider,
-            ServiceAction<IStringlyTypedPathOperator> addStringlyTypedPathOperator)
+            IServiceAction<ISftpClientWrapperProvider> addSftpClientWrapperProvider,
+            IServiceAction<IStringlyTypedPathOperator> addStringlyTypedPathOperator)
         {
             services
                 .AddSingleton<IRemoteFileSystemOperator, RemoteFileSystemOperator>()
@@ -30,9 +30,9 @@ namespace R5T.Gepidia.Remote
         /// <summary>
         /// Adds the <see cref="RemoteFileSystemOperator"/> implementation of <see cref="IRemoteFileSystemOperator"/> as a <see cref="ServiceLifetime.Singleton"/>.
         /// </summary>
-        public static ServiceAction<IRemoteFileSystemOperator> AddRemoteFileSystemOperatorAction(this IServiceCollection services,
-            ServiceAction<ISftpClientWrapperProvider> addSftpClientWrapperProvider,
-            ServiceAction<IStringlyTypedPathOperator> addStringlyTypedPathOperator)
+        public static IServiceAction<IRemoteFileSystemOperator> AddRemoteFileSystemOperatorAction(this IServiceCollection services,
+            IServiceAction<ISftpClientWrapperProvider> addSftpClientWrapperProvider,
+            IServiceAction<IStringlyTypedPathOperator> addStringlyTypedPathOperator)
         {
             var serviceAction = new ServiceAction<IRemoteFileSystemOperator>(() => services.AddRemoteFileSystemOperator(
                 addSftpClientWrapperProvider,
@@ -44,7 +44,7 @@ namespace R5T.Gepidia.Remote
         /// Adds the <see cref="FileSystemOperator"/> implementation of <see cref="IRemoteFileSystemOperator"/> as a <see cref="ServiceLifetime.Singleton"/>.
         /// </summary>
         public static IServiceCollection AddRemoteBasedFileSystemOperator(this IServiceCollection services,
-            ServiceAction<IRemoteFileSystemOperator> addRemoteFileSystemOperator)
+            IServiceAction<IRemoteFileSystemOperator> addRemoteFileSystemOperator)
         {
             services
                 .AddSingleton<IFileSystemOperator, FileSystemOperator>()
@@ -57,8 +57,8 @@ namespace R5T.Gepidia.Remote
         /// <summary>
         /// Adds the <see cref="FileSystemOperator"/> implementation of <see cref="IRemoteFileSystemOperator"/> as a <see cref="ServiceLifetime.Singleton"/>.
         /// </summary>
-        public static ServiceAction<IFileSystemOperator> AddRemoteBasedFileSystemOperatorAction(this IServiceCollection services,
-            ServiceAction<IRemoteFileSystemOperator> addRemoteFileSystemOperator)
+        public static IServiceAction<IFileSystemOperator> AddRemoteBasedFileSystemOperatorAction(this IServiceCollection services,
+            IServiceAction<IRemoteFileSystemOperator> addRemoteFileSystemOperator)
         {
             var serviceAction = new ServiceAction<IFileSystemOperator>(() => services.AddRemoteBasedFileSystemOperator(
                 addRemoteFileSystemOperator));
