@@ -5,10 +5,13 @@ using System.IO;
 using R5T.Lombardy;
 using R5T.Pictia;
 
+using R5T.T0064;
+
 
 namespace R5T.Gepidia.Remote
 {
-    public class RemoteFileSystemOperator : IRemoteFileSystemOperator
+    [ServiceImplementationMarker]
+    public class RemoteFileSystemOperator : IRemoteFileSystemOperator, IServiceImplementation
     {
         private ISftpClientWrapperProvider SftpClientWrapperProvider { get; }
         public IStringlyTypedPathOperator StringlyTypedPathOperator { get; }

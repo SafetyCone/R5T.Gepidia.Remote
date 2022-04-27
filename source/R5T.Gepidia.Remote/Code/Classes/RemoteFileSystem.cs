@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 using R5T.Lombardy;
 using R5T.Magyar.Extensions;
-using R5T.Magyar.IO;
 using R5T.Pictia;
 using R5T.Pictia.Extensions;
 
@@ -410,7 +410,7 @@ namespace R5T.Gepidia.Remote
             var separators = new char[] { ' ' };
             using (var stringReader = new StringReader(commandOutput))
             {
-                while (stringReader.ReadLine(out var pathLine))
+                while (stringReader.ReadLineIsNotEndSynchronous(out var pathLine))
                 {
                     var infoLine = stringReader.ReadLine();
                     infoLine = infoLine.Replace("\\ ", " "); // Fix spaces in file or directory name issue.

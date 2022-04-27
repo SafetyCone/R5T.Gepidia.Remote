@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 
+using R5T.T0064;
+
 
 namespace R5T.Gepidia.Remote
 {
-    public class FileSystemOperator : IFileSystemOperator
+    [ServiceImplementationMarker]
+    public class FileSystemOperator : IFileSystemOperator, IServiceImplementation
     {
         private IRemoteFileSystemOperator RemoteFileSystemOperator { get; }
 
