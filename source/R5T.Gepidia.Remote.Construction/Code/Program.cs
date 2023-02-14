@@ -24,7 +24,7 @@ namespace R5T.Gepidia.Remote.Construction
         public static IServiceProvider GetServiceProvider()
         {
             var serviceProvider = new ServiceCollection()
-                .UseSftpClientWrapper()
+                .UseSftpClientWrapper_Old()
                 .AddSingleton<RemoteFileSystemOperator>()
 
                 .BuildServiceProvider()
